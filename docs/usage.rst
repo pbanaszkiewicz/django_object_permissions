@@ -33,15 +33,188 @@ requires you to delete or modify the database table.
         delete = models.BooleanField()
 
 
-Settings permissions
-~~~~~~~~~~~~~~~~~~~~
+Settings and revoking permissions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To grant a user or a group a permission:
+
+    >>> user.grant('create', instance)
+    >>> group.grant('create', instance)
+
+Similarily, to revoke it back:
+
+    >>> user.revoke('create', instance)
+    >>> group.revoke('create', instance)
+
+Alternatively, you can revoke all the perms from specified user or group:
+
+    >>> user.revoke_all(instance)
+    >>> group.revoke_all(instance)
+
+To set an exact list of permissions to the user or the group, use
+``set_perms``:
+
+    >>> user.set_perms(['create', 'delete'], instance)
+    >>> group.set_perms(['create', 'delete'], instance)
+
+All these methods are implemented via :mod:`object_permissions.registration`
+functions documented below:
 
 .. automodule:: object_permissions.registration
-    :members: grant, revoke, set_perms, revoke_all
+    :members: grant, grant_group, revoke, revoke_group, revoke_all, revoke_all_group, set_user_perms, set_group_perms
 
 
 Retrieving permissions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: object_permissions.registration
-    :members: get_perms, get_model_perms
+You can retrieve the list of permissions a user or a group has.  This only
+returns permissions directly set on either user or group:
+
+    >>> user.get_perms(instance)
+    ['create', 'delete']
+    >>> group.get_perms(instance)
+    []
+
+To retrieve a list of permissions registered for a specified model ``MyModel``:
+
+    >>> from object_permissions import get_model_perms
+    >>> get_model_perms(MyModel)
+    ['view', 'edit', 'delete']
+
+
+Checking permissions
+~~~~~~~~~~~~~~~~~~~~
+
+There are multiple ways for a developer to check if a user or a group has been
+granted permissions.
+
+Check for a **single permission** is performed for users via the
+`authentication framework`_  (every available `authentication backend`_ is
+being checked) and directly through Object Permissions in case of groups:
+
+.. _authentication framework: http://docs.djangoproject.com/en/1.2/topics/auth/
+.. _authentication backend: http://docs.djangoproject.com/en/1.2/topics/auth/#specifying-authentication-backends
+
+.. code-block:: pycon
+
+    >>> user.has_perms('create', instance)
+    True
+    >>> group.has_perms('create', instance)
+    False
+
+Bypassing authentication framework check is possible via ``has_object_perms``
+methods.
+
+* ``perm`` should be a single permission name
+* ``groups`` toggle will include permissions user has indirectly through
+  his/her groups
+
+.. code-block:: pycon
+
+    >>> user.has_object_perms(user, 'create', instance)
+    # exclude groups, non-default
+    >>> user.has_object_perms(user, 'create', instance, groups=False)
+
+To check whether a user or a group has at least one of the permissions:
+
+.. code-block:: pycon
+
+    # check any possible permission for this model instance
+    >>> user.has_any_perms(instance)
+    >>> user.has_any_perms(instance, groups=False)  # ...but avoid groups perms
+
+    # check any permission from a list
+    >>> user.has_any_perms(instance, perms=['create', 'edit'])
+    >>> user.has_any_perms(instance, perms=['create', 'edit'], groups=False)
+
+    # check permissions directly on a group
+    >>> group.has_any_perms(instance)
+    >>> group.has_any_perms(instance, perms=['create, edit'])
+
+Similarily there's a ``has_all_perms`` method:
+
+.. code-block:: pycon
+
+    >>> user.has_all_perms(instance, perms=['create', 'edit'])
+    >>> user.has_all_perms(instance, perms=['create', 'edit'], groups=False)
+    >>> group.has_all_perms(instance, perms=['create', 'edit'])
+
+
+Querying objects
+~~~~~~~~~~~~~~~~
+
+It's possible to retrieve a list of objects the user has been granted specific
+permsissions to.
+
+Methods below all return a `QuerySet`_.   They can be filtered further to
+refine your query.  Use them to efficiently build a list of objects user or
+group has permissions on:
+
+.. _QuerySet: http://docs.djangoproject.com/en/dev/ref/models/querysets/
+
+.. code-block:: pycon
+
+    # there must be at least one permission set on
+    # perms must be an iterable or None (to check for any permission)
+    >>> user.get_objects_any_perms(instance, perms=['create','delete'])
+    >>> group.get_objects_any_perms(instance, perms=['create','delete'])
+
+    # include only direct perms on users
+    >>> user.get_objects_any_perms(instance, perms=['create', 'delete'], groups=False)
+
+
+Similarily, there's a method to check for all of specified permissions:
+
+.. code-block:: pycon
+
+    >>> user.get_objects_all_perms(instance, perms=['create','delete'])
+    >>> group.get_objects_all_perms(instance, perms=['create','delete'])
+
+    # include only direct perms on users
+    >>> user.get_objects_all_perms(instance, perms=['create', 'delete'], groups=False)
+
+
+Querying Users and Objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Retrieve a list of Users or Groups with permissions on a model instance.
+
+These methods return `QuerySet`_ of Users and Groups.  They can be filtered
+further to refine your query.  Use these methods to efficiently build a list of
+users who have permissions to an object.
+
+.. _QuerySet: http://docs.djangoproject.com/en/dev/ref/models/querysets/
+
+To retrieve a list of users that has permissions on a model class or instance
+use ``get_users_any_perms`` and ``get_users_all_perms``.
+
+``model`` may be a class or an instance:
+
+* class -- returns all users with permissions on any instance of the model
+* instance -- returns users with permissions only on that instance
+
+``perms`` should be a list of permission names, or ``None`` to check for any possible permission.
+
+``groups``, which defaults to True, will include or exclude permissions a user
+has indirectly through a group.
+
+.. code-block:: pycon
+
+    >>> from object_permissions import get_users_any_perms, get_users_all_perms
+    # the user must have at least one of the specified permissions
+    >>> get_users_any_perms(instance, perms=['create', 'delete'])
+
+    # the user must have all of these permissions
+    >>> get_users_all_perms(instance, perms=['create', 'delete'])
+
+    # include only direct perms on users
+    >>> get_users_any_perms(instance, perms=['create', 'delete'], groups=False)
+    >>> get_users_all_perms(instance, perms=['create', 'delete'], groups=False)
+
+Similarily, there's a set of methods that work on groups:
+
+.. code-block:: pycon
+
+    >>> from object_permissions import get_groups_any_perms, get_groups_all_perms
+    >>> get_groups_any_perms(instance, perms=['create','delete'])
+    >>> get_groups_all_perms(instance, perms=['create','delete'])

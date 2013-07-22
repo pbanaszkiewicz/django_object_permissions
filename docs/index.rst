@@ -14,8 +14,10 @@ Contents
 
    installation
    usage
+   related_models
+   views_templates
+   signals
    changelog
-
 
 
 Indices and tables

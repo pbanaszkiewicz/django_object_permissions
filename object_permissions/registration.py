@@ -116,7 +116,7 @@ def register(params, model, app_label=None):
     if isinstance(params, (str, unicode)):
         warn("Using a single permission is deprecated!")
         perms = [params]
-    
+
     if app_label is None:
         warn("Registration without app_label is deprecated!")
         warn("Adding %s permissions table to object_permission app.  Note that you may not be able to migrate with south" % model)
@@ -224,7 +224,7 @@ if TESTING:
         parent = models.ForeignKey(TestModel, null=True)
     class TestModelChildChild(models.Model):
         parent = models.ForeignKey(TestModelChild, null=True)
-        
+
     TEST_MODEL_PARAMS = {
         'perms' : {
             # perm with both params
@@ -258,6 +258,10 @@ def get_class(class_name):
 def grant(user, perm, obj):
     """
     Grant a permission to a User.
+
+    :param perm: permission name
+    :type perm: string
+    :param obj: model instance
     """
 
     model = obj.__class__
@@ -283,12 +287,16 @@ def grant(user, perm, obj):
 def grant_group(group, perm, obj):
     """
     Grant a permission to a Group.
+
+    :param perm: permission name
+    :type perm: string
+    :param obj: model instance
     """
 
     model = obj.__class__
     if perm not in get_model_perms(model):
         raise UnknownPermissionException(perm)
-    
+
     permissions = permission_map[model]
 
     try:
@@ -307,29 +315,33 @@ def grant_group(group, perm, obj):
 def set_user_perms(user, perms, obj):
     """
     Set User permissions to exactly the specified permissions.
-    """    
+
+    :param perms: permission names
+    :type perms: an iterable consisting of strings
+    :param obj: model instance
+    """
     if perms:
         model = obj.__class__
         permissions = permission_map[model]
-        
+
         all_perms = dict((p, False) for p in get_model_perms(model))
         for perm in perms:
             all_perms[perm] = True
-        
+
         try:
             user_perms = permissions.objects.get(user=user, obj=obj)
         except permissions.DoesNotExist:
             user_perms = permissions(user=user, obj=obj)
-        
+
         for perm, enabled in all_perms.iteritems():
             if enabled and not getattr(user_perms, perm):
                 granted.send(sender=user, perm=perm, object=obj)
             elif not enabled and getattr(user_perms, perm):
                 revoked.send(sender=user, perm=perm, object=obj)
             setattr(user_perms, perm, enabled)
-        
+
         user_perms.save()
-    
+
     else:
         # removing all perms.
         revoke_all(user, obj)
@@ -340,6 +352,10 @@ def set_user_perms(user, perms, obj):
 def set_group_perms(group, perms, obj):
     """
     Set group permissions to exactly the specified permissions.
+
+    :param perms: permission names
+    :type perms: an iterable consisting of strings
+    :param obj: model instance
     """
     if perms:
         model = obj.__class__
@@ -347,20 +363,20 @@ def set_group_perms(group, perms, obj):
         all_perms = dict((p, False) for p in get_model_perms(model))
         for perm in perms:
             all_perms[perm] = True
-    
+
         try:
             group_perms = permissions.objects.get(group=group, obj=obj)
         except permissions.DoesNotExist:
             group_perms = permissions(group=group, obj=obj)
-    
+
         for perm, enabled in all_perms.iteritems():
             if enabled and not getattr(group_perms, perm):
                 granted.send(sender=group, perm=perm, object=obj)
             elif not enabled and getattr(group_perms, perm):
                 revoked.send(sender=group, perm=perm, object=obj)
-    
+
             setattr(group_perms, perm, enabled)
-    
+
         group_perms.save()
 
     else:
@@ -373,6 +389,10 @@ def set_group_perms(group, perms, obj):
 def revoke(user, perm, obj):
     """
     Revoke a permission from a User.
+
+    :param perm: permission name
+    :type perm: string
+    :param obj: model instance
     """
 
     model = obj.__class__
@@ -402,6 +422,10 @@ def revoke(user, perm, obj):
 def revoke_group(group, perm, obj):
     """
     Revokes a permission from a Group.
+
+    :param perm: permission name
+    :type perm: string
+    :param obj: model instance
     """
 
     model = obj.__class__
@@ -431,6 +455,8 @@ def revoke_group(group, perm, obj):
 def revoke_all(user, obj):
     """
     Revoke all permissions from a User.
+
+    :param obj: model instance
     """
 
     model = obj.__class__
@@ -451,6 +477,8 @@ def revoke_all(user, obj):
 def revoke_all_group(group, obj):
     """
     Revoke all permissions from a Group.
+
+    :param obj: model instance
     """
 
     model = obj.__class__
@@ -678,7 +706,7 @@ def group_has_any_perms(group, obj, perms=None):
         base = permissions.objects.filter(q, group=group)
     else:
         base = permissions.objects.filter(group=group)
-    
+
     # select model or instance level query
     return base.filter(obj=obj).exists() if instance else base.exists()
 
@@ -705,7 +733,7 @@ def user_has_all_perms(user, obj, perms, groups=True):
         base = base.filter(Q(user=user) | Q(group__user=user))
     else:
         base = base.filter(user=user)
-        
+
     # select model or instance level query
     return base.filter(obj=obj).exists() if instance else base.exists()
 
@@ -713,16 +741,16 @@ def user_has_all_perms(user, obj, perms, groups=True):
 def group_has_all_perms(group, obj, perms):
     """
     Check whether the Group has *all* permission on the given object.
-    
+
     @param group - group for which to check permissions
     @param obj - Model or Instance for which to check permissions on.
     @param perms - list of permissions that must be matched
-    
+
     @return True if group has all permissions on an instance.  If a model class
     is given this returns True if the group has permissions on any instance of
     the model.
     """
-    
+
     instance = isinstance(obj, (Model,))
     model = obj.__class__ if instance else obj
     try:
@@ -738,7 +766,7 @@ def group_has_all_perms(group, obj, perms):
 
     # select model or instance level query
     return base.filter(obj=obj).exists() if instance else base.exists()
-    
+
 
 def get_users_any(obj, perms=None, groups=True):
     """
@@ -760,7 +788,7 @@ def get_users_any(obj, perms=None, groups=True):
     if perms:
         # create Q clauses out of perms and OR them all together
         q = reduce(or_, (Q(**{perm_table % perm:True}) for perm in perms))
-        
+
         if groups:
             # handle groups by checking perms for any group users are in.
             #
@@ -768,16 +796,16 @@ def get_users_any(obj, perms=None, groups=True):
             # the right object with the right set of perms.  Combine the clauses
             # together like so:
             #     (obj AND perms) OR (group_obj AND group perms)
-            
+
             group_perm_table = "groups__%s_gperms__%%s" % model.__name__
             group_obj_table = "groups__%s_gperms__obj" % model.__name__
             gperms = reduce(or_, (Q(**{group_perm_table % perm:True}) \
                                   for perm in perms))
             group_clause = Q(**{group_obj_table:obj}) & gperms
             return User.objects.filter((Q(**d) & q) | group_clause).distinct()
-            
+
         return User.objects.filter(q, **d).distinct()
-    
+
     if groups:
         # handle groups with *any* perm by adding a clause that checks for the
         # object via the groups table.  this give inherent group membership
@@ -785,7 +813,7 @@ def get_users_any(obj, perms=None, groups=True):
         group_obj_table = "groups__%s_gperms__obj" % model.__name__
         group_clause = Q(**{group_obj_table:obj})
         return User.objects.filter(Q(**d) | group_clause).distinct()
-    
+
     return User.objects.filter(**d).distinct()
 
 
@@ -810,7 +838,7 @@ def get_users_all(obj, perms, groups=True):
     # all to be AND'd together.
     for perm in perms:
         d[perm_table % perm] = True
-    
+
     if groups:
         # handle groups by checking perms for any group users are in.
         #
@@ -818,7 +846,7 @@ def get_users_all(obj, perms, groups=True):
         # the right object with the right set of perms.  Combine the clauses
         # together like so:
         #     (obj AND perms) OR (group_obj AND group perms)
-        
+
         group_perm_table = "groups__%s_gperms__%%s" % model.__name__
         group_obj_table = "groups__%s_gperms__obj" % model.__name__
         group_clause = {group_obj_table: obj}
@@ -833,7 +861,7 @@ def get_users(obj, groups=True):
     """
     Retrieve the list of Users that have permissions on the given object.
     """
-    
+
     return get_users_any(obj, groups=groups)
 
 
@@ -844,7 +872,7 @@ def get_groups_any(obj, perms=None):
 
     @param perms - perms to check, or None to check for *any* perms
     """
-    
+
     model = obj.__class__
     permissions = permission_map[model]
 
@@ -858,7 +886,7 @@ def get_groups_any(obj, perms=None):
         # create Q clauses out of perms and OR them all together
         q = reduce(or_, (Q(**{perm_table % perm:True}) for perm in perms))
         return Group.objects.filter(q, **d).distinct()
-    
+
     return Group.objects.filter(**d).distinct()
 
 
@@ -869,7 +897,7 @@ def get_groups_all(obj, perms):
 
     @param perms - perms to check
     """
-    
+
     model = obj.__class__
     permissions = permission_map[model]
 
@@ -883,7 +911,7 @@ def get_groups_all(obj, perms):
     # all to be AND'd together.
     for perm in perms:
         d[perm_table % perm] = True
-    
+
     return Group.objects.filter(**d).distinct()
 
 
@@ -907,7 +935,7 @@ def perms_on_any(user, model, perms, groups=True):
     @param model: model on which to filter
     @param perms: list of perms to match
     @return true if has perms on any instance of model
-    
+
     @deprecated - replaced by user_has_any_perms()
     """
     warn('user.perms_on_any() deprecated in lieu of user.has_any_perms()', stacklevel=2)
@@ -934,13 +962,13 @@ def user_get_objects_any_perms(user, model, perms=None, groups=True, **related):
     are optional  E.g. foo__bar=['xoo'], foo=None
     @return a queryset of matching objects
     """
-    
+
     q = Q(operms__user=user)
 
     # optionally add groups
     if groups:
         q |= Q(operms__group__user=user)
-    
+
     # optionally add specific perms
     if perms:
         # OR all user permission clauses together
@@ -953,23 +981,23 @@ def user_get_objects_any_perms(user, model, perms=None, groups=True, **related):
     # the relation we must add a clause that follows the relationship path to
     # the operms table for that model, and optionally include perms.
     if related:
-        
+
         for field in related:
             # build user clause that follows relationship through operms to user
             clause = Q(**{'%s__operms__user'%field:user})
             perms = related[field]
-            
+
             # optionally include groups
             if groups:
                 clause |= Q(**{'%s__operms__group__user'%field:user})
-            
+
             # optionally include specific perms.
             if perms:
                 perm_field = '%s__operms__%%s' % field
                 perm_clause = reduce(or_, (Q(**{perm_field % perm: True}) \
                                                 for perm in perms))
                 clause &= perm_clause
-            
+
             #add finished query
             q |= clause
 
@@ -979,7 +1007,7 @@ def user_get_objects_any_perms(user, model, perms=None, groups=True, **related):
 
 def group_get_objects_any_perms(group, model, perms=None, **related):
     """
-    Make a filtered QuerySet of objects for which the Group has any of the 
+    Make a filtered QuerySet of objects for which the Group has any of the
     requested permissions.
 
     @param group: group who must have permissions
@@ -999,7 +1027,7 @@ def group_get_objects_any_perms(group, model, perms=None, **related):
         perm_clause = reduce(or_, (Q(**{"operms__%s" % perm: True}) \
                                    for perm in perms if perm in model_perms))
         q &= perm_clause
-    
+
     # related fields are built as sub-clauses for each related field.  To follow
     # the relation we must add a clause that follows the relationship path to
     # the operms table for that model, and optionally include perms.
@@ -1007,17 +1035,17 @@ def group_get_objects_any_perms(group, model, perms=None, **related):
         for field, perms in related.items():
             # build group clause that follows relationship
             clause = Q(**{'%s__operms__group'%field:group})
-            
+
             # optionally include specific perms.
             if perms:
                 perm_field = '%s__operms__%%s' % field
                 perm_clause = reduce(or_, (Q(**{perm_field % perm: True}) \
                                                 for perm in perms))
                 clause &= perm_clause
-            
+
             #add finished query
             q |= clause
-    
+
     return model.objects.filter(q).distinct()
 
 
@@ -1032,17 +1060,17 @@ def user_get_objects_all_perms(user, model, perms, groups=True, **related):
     @param groups: include perms the user has from membership in Groups
     @return a queryset of matching objects
     """
-    
+
     # create kwargs including all perms that must be matched
     perm_clause = {}
     for perm in perms:
         perm_clause['operms__%s' % perm] = True
-    
+
     if groups:
         # must match either a user or group clause + one of the perm clauses
         user_clause = Q(operms__group__user=user) | Q(operms__user=user)
         q = user_clause & Q(**perm_clause)
-    
+
     else:
         # must match user clause + all of the perm clauses
         q = Q(operms__user=user, **perm_clause)
@@ -1051,22 +1079,22 @@ def user_get_objects_all_perms(user, model, perms, groups=True, **related):
     # the relation we must add a clause that follows the relationship path to
     # the operms table for that model, and optionally include perms.
     if related:
-        
+
         for field in related:
             # build user clause that follows relationship through operms to user
             clause = Q(**{'%s__operms__user'%field:user})
             perms = related[field]
-            
+
             # optionally include groups
             if groups:
                 clause |= Q(**{'%s__operms__group__user'%field:user})
-            
+
             # create kwargs including all perms that must be matched
             perm_clause = {}
             for perm in perms:
                 perm_clause['operms__%s' % perm] = True
             clause &= Q(**perm_clause)
-            
+
             #add finished query
             q &= clause
 
@@ -1094,7 +1122,7 @@ def group_get_objects_all_perms(group, model, perms, **related):
     for perm in perms:
         perm_clause['operms__%s' % perm] = True
     q &= Q(**perm_clause)
-    
+
     # related fields are built as sub-clauses for each related field.  To follow
     # the relation we must add a clause that follows the relationship path to
     # the operms table for that model, and optionally include perms.
@@ -1102,13 +1130,13 @@ def group_get_objects_all_perms(group, model, perms, **related):
         for field, perms in related.items():
             # build group clause that follows relationship
             q &= Q(**{'%s__operms__group'%field:group})
-            
+
             # create kwargs including all perms that must be matched
             perm_clause = {}
             for perm in perms:
                 perm_clause['operms__%s' % perm] = True
             q &= Q(**perm_clause)
-    
+
     return model.objects.filter(q).distinct()
 
 
@@ -1116,11 +1144,11 @@ def user_get_all_objects_any_perms(user, groups=True):
     """
     Get all objects from all registered models that the user has any permission
     for.
-    
+
     This method does not accept a list of permissions since in most cases
     permissions will not exist across all models.  If a permission didn't exist
     on any model then it would cause an error to be thrown.
-    
+
     @param user - user to check perms for
     @param groups - include permissions through groups
     @return a dictionary mapping class to a queryset of objects
@@ -1135,11 +1163,11 @@ def group_get_all_objects_any_perms(group):
     """
     Get all objects from all registered models that the group has any permission
     for.
-    
+
     This method does not accept a list of permissions since in most cases
     permissions will not exist across all models.  If a permission didn't exist
     on any model then it would cause an error to be thrown.
-    
+
     @param group - group to check perms for
     @return a dictionary mapping class to a queryset of objects
     """

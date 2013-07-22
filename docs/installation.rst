@@ -25,7 +25,7 @@ Configuration
 
 1. Add ``object_permissions`` to your project's ``INSTALLED_APPS`` setting.
 2. Add ``object_permissions.backend.ObjectPermBackend`` to your project's
-``AUTHENTICATION_BACKENDS``
+   ``AUTHENTICATION_BACKENDS``.
 3. Synchronize your database: ``./manage.py sync``
 
 Testing

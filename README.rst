@@ -16,8 +16,8 @@ Installation
 
 There are several ways to install Object Permissions.
 
-Object Permissions ships a standard distutils setup.py. A classic invocation
-to install from setup.py might be::
+Object Permissions ships a standard distutils ``setup.py``. A classic invocation
+to install from ``setup.py`` might be::
 
  $ python setup.py install
 
@@ -28,7 +28,7 @@ You may need to add sudo in order to install to the system Python.
  $ sudo python setup.py install
 
 We also have Object Permissions on PyPI, so it can be installed using pip.
-(easy_install also works, but we do not recommend easy_install. Just use pip.)
+(easy_install also works, but we do not recommend it.)
 
 ::
 
@@ -36,24 +36,24 @@ We also have Object Permissions on PyPI, so it can be installed using pip.
 
 If you are installing Object Permissions directly into a Django app, and want
 to distribute Object Permissions with your app, simply copy the
-object_permissions folder into your Django project.
+``object_permissions`` folder into your Django project.
 
 Configuring Your Django Project
 ----------------------------------------
 
-1) Add "object_permissions" to INSTALLED_APPS
-2) Add "object_permissions.backend.ObjectPermBackend" to AUTHENTICATION_BACKENDS. 
-3) Run ./manage.py syncdb
+1. Add "object_permissions" to ``INSTALLED_APPS``
+2. Add "object_permissions.backend.ObjectPermBackend" to ``AUTHENTICATION_BACKENDS``
+3. Run ``./manage.py syncdb``
 
-if South is enabled for your project you will need to create tables using migrate
+If South is enabled for your project you will need to create tables using ``migrate``
 
-3b) Run ./manage.py migrate
+4. Run ``./manage.py migrate object_permissions``
 
 Using Object Permissions
 ----------------------------------------
 
-First, register some permissions onto a Model in your models.py. This can only
-be done once per model; see registration.py for more information.
+First, register some permissions onto a Model in your ``models.py``. This can only
+be done once per model; see ``registration.py`` for more information.
 
 >>> from object_permissions import register
 >>> register(['permission'], Model)
@@ -71,5 +71,5 @@ Authors
 -------
 
 Object Permissions was originally implemented by Peter Krenesky at the Oregon
-State University Open Source Lab (OSUOSL). This release is maintained by
-Ken Lett.
+State University Open Source Lab (`OSUOSL <https://code.osuosl.org/>`_).
+This release is maintained by Ken Lett.

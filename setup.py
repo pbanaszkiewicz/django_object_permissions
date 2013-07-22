@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-long_desc = open('README').read()
+long_desc = open('README.rst').read()
 
 setup(name='django-object-permissions',
       version="1.4.6",

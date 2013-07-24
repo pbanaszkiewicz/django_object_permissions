@@ -3,21 +3,21 @@ Installation
 
 To install Django Object Permissions, simply pull it from PyPI:
 
-::
+.. code-block:: console
 
-  pip install django-object-permissions
+    $ pip install django-object-permissions
 
 If you want to have the latest version, you can clone git repository:
 
-::
+.. code-block:: console
 
-  git clone git://git.osuosl.org/gitolite/django/django_object_permissions
+    $ git clone git://git.osuosl.org/gitolite/django/django_object_permissions
 
 Then you'd have to manually install it:
 
-::
+.. code-block:: console
 
-  python setup.py install
+    $ python setup.py install
 
 
 Configuration

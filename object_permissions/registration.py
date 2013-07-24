@@ -543,7 +543,7 @@ def get_group_perms(group, obj, groups=True):
     """
     Return the permissions that the Group has on the given object.
 
-    @param groups - does nothing, compatibility with user version
+    :param groups: does nothing, compatibility with user version
     """
     klass = obj.__class__
     permissions = permission_map[klass]
@@ -580,7 +580,8 @@ def get_model_perms(model):
     """
     Return all available permissions for a model.
 
-    This function accepts both Models and model instances.
+    :param model: object whose permissions are returned
+    :type model: Model class or its instance
     """
 
     if isinstance(model, models.Model):
@@ -663,6 +664,12 @@ def group_has_perm(group, perm, obj):
 def user_has_any_perms(user, obj, perms=None, groups=True):
     """
     Check whether the User has *any* permission on the given object.
+
+    :param perms: permissions names
+    :type perms: list of strings
+    :param groups: include (or not) permissions user has indirectly through
+                   his/her groups
+    :type groups: bool
     """
     instance = isinstance(obj, (Model,))
     model = obj.__class__ if instance else obj
@@ -773,8 +780,13 @@ def get_users_any(obj, perms=None, groups=True):
     Retrieve the list of Users that have any of the permissions on the given
     object.
 
-    @param perms - perms to check, or None if match *any* perms
-    @param groups - include users with permissions via groups
+    :param obj: object on which users have permissions
+    :type obj: Model instance
+    :param perms: permissions to check, or ``None`` if you want to match
+                  **any** perms
+    :type perms: list of strings
+    :param groups: include users with permissions set via groups
+    :type groups: bool
     """
     model = obj.__class__
     permissions = permission_map[model]
@@ -822,8 +834,12 @@ def get_users_all(obj, perms, groups=True):
     Retrieve the list of Users that have all of the permissions on the given
     object.
 
-    @param perms - perms to check
-    @param groups - include users with permissions via groups
+    :param obj: object on which users have permissions
+    :type obj: Model instance
+    :param perms: all the permissions
+    :type perms: list of strings
+    :param groups: include users with permissions set via groups
+    :type groups: bool
     """
     model = obj.__class__
     permissions = permission_map[model]
@@ -870,7 +886,11 @@ def get_groups_any(obj, perms=None):
     Retrieve the list of Groups that have any of the permissions on the given
     object.
 
-    @param perms - perms to check, or None to check for *any* perms
+    :param obj: object on which users have permissions
+    :type obj: Model instance
+    :param perms: permissions to check, or ``None`` if you want to match
+                  **any** perms
+    :type perms: list of strings
     """
 
     model = obj.__class__
@@ -895,7 +915,10 @@ def get_groups_all(obj, perms):
     Retrieve the list of Groups that have all of the permissions on the given
     object.
 
-    @param perms - perms to check
+    :param obj: object on which users have permissions
+    :type obj: Model instance
+    :param perms: all the permissions
+    :type perms: list of strings
     """
 
     model = obj.__class__

@@ -21,3 +21,9 @@ settings.py
 dist
 django_object_permissions.egg-info
 
+# some redundant directories
+*.egg
+
+# output from `python setup.py test`
+coverage.xml
+pep8.txt

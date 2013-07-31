@@ -17,6 +17,8 @@ Then you'd have to manually install it:
 
 .. code-block:: console
 
+    $ cd django_object_log
+    $ git checkout develop
     $ python setup.py install
 
 

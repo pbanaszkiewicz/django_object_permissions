@@ -261,11 +261,10 @@ def view_obj_permissions(request, class_name, obj_id=None,
     user_id=None, group_id=None,
     row_template='object_permissions/permissions/object_row.html'):
     """
-    Generic view for editing permissions on an object when the user is already.
-    Known.  This is an admin only view since it is impossible to know the
+    Generic view for editing permissions on an object when the user is already
+    known.  This is an admin only view since it is impossible to know the
     permission scheme for the apps that are registering properties.
     """
-
     if not request.user.is_superuser:
         return HttpResponseForbidden('You are not authorized to view this page')
 
@@ -343,7 +342,6 @@ def view_obj_permissions(request, class_name, obj_id=None,
             {'form':form, 'obj':obj, 'user_id':user_id, 'group_id':group_id,
              'url':url},
             context_instance=RequestContext(request))
-
 
 
 @login_required

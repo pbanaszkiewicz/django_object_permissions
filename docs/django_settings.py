@@ -23,5 +23,5 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     # 'django.contrib.sites',
-    'YOUR_APP_HERE', # This is where you put your app
+    'object_permissions', # This is where you put your app
 )

@@ -1195,23 +1195,22 @@ class TestGroupViews(TestCase):
         args_post = group.id
 
         # anonymous user
-        # response = c.get(url % args, follow=True)
-        response = c.get(reverse("group-edit-permissions", args=(group.id, "user", user0.id)), follow=True)
-        self.assertEqual(200, response.status_code)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = c.get(reverse("group-edit-permissions", args=(group.id, "user", user0.id)))
+        self.assertIn(response.status_code, [301, 302])
 
         # unauthorized
         self.assertTrue(c.login(username=user0.username, password='secret'))
-        # response = c.get(url % args)
         response = c.get(reverse("group-edit-permissions", args=(group.id, "user", user0.id)))
         self.assertEqual(403, response.status_code)
-        # response = c.post(url % args)
         response = c.post(reverse("group-edit-permissions", args=(group.id, "user", user0.id)))
         self.assertEqual(403, response.status_code)
 
         # authorized post (perm granted)
+        # XXX: I can't seem to be able to fix this.  I have no idea what wrong
+        #      with this code.  The rest of this test case works like a charm.
         grant(user0, 'admin', group)
-        response = c.get(url % args, {'user':user0.id, 'obj':group.pk})
+        response = c.get(reverse("group-edit-permissions", args=(group.id, "user", user0.id)),
+                         {'user': user0.id, 'obj': group.pk})
         self.assertEqual(200, response.status_code)
         self.assertEquals('text/html; charset=utf-8', response['content-type'])
         self.assertTemplateUsed(response, 'object_permissions/permissions/form.html')
@@ -1220,43 +1219,43 @@ class TestGroupViews(TestCase):
         revoke(user0, 'admin', group)
         user0.is_superuser = True
         user0.save()
-        response = c.get(url % args, {'user':user0.id})
+        response = c.get(reverse("group-edit-permissions", args=(group.id, "user", user0.id)), {'user':user0.id})
         self.assertEqual(200, response.status_code)
         self.assertEquals('text/html; charset=utf-8', response['content-type'])
         self.assertTemplateUsed(response, 'object_permissions/permissions/form.html')
 
         # invalid user (GET)
-        response = c.get(url % (group.id, -1))
+        response = c.get(reverse("group-edit-permissions", args=(group.id, "user", 123456)))
         self.assertEqual(404, response.status_code)
 
         # invalid group (GET)
-        response = c.get(url % (-1, user0.id))
+        response = c.get(reverse("group-edit-permissions", args=(123456, "user", user0.id)))
         self.assertEqual(404, response.status_code)
 
         # invalid user (POST)
         data = {'permissions':['admin'], 'user':-1, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEqual(200, response.status_code)
         self.assertEquals('application/json', response['content-type'])
         self.assertNotEquals('1', response.content)
 
         # invalid group (POST)
         data = {'permissions':['admin'], 'group':-1, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEqual(200, response.status_code)
         self.assertEquals('application/json', response['content-type'])
         self.assertNotEquals('1', response.content)
 
         # user and group (POST)
         data = {'permissions':['admin'], 'user':user0.id, 'group':group1.id, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEqual(200, response.status_code)
         self.assertEquals('application/json', response['content-type'])
         self.assertNotEquals('1', response.content)
 
         # invalid permission
         data = {'permissions':['DoesNotExist'], 'user':user0.id, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEqual(200, response.status_code)
         self.assertEquals('application/json', response['content-type'])
         self.assertNotEquals('1', response.content)
@@ -1272,8 +1271,7 @@ class TestGroupViews(TestCase):
         # valid post user
 
         data = {'permissions':['admin'], 'user':user0.id, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
-
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEqual(200, response.status_code)
         self.assertEquals('text/html; charset=utf-8', response['content-type'])
         self.assertTrue(user0.has_perm('admin', group))
@@ -1287,7 +1285,7 @@ class TestGroupViews(TestCase):
 
         # valid post no permissions user
         data = {'user':user0.id, 'obj':group.pk}
-        response = c.post(url_post % args_post, data)
+        response = c.post(reverse('group-permissions', args=[group.id]), data)
         self.assertEquals('text/html; charset=utf-8', response['content-type'])
         self.assertEqual(200, response.status_code)
         self.assertEqual([], get_user_perms(user0, group))
@@ -1298,32 +1296,30 @@ class TestGroupViews(TestCase):
         group.user_set.add(user0)
         group1 = self.test_save('other_group')
 
-        url = '/group/%s/permissions/all'
         c = Client()
 
         # anonymous user
-        response = c.get(url % group.pk, follow=True)
-        self.assertEqual(200, response.status_code)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = c.get(reverse("group-all-permissions", args=[group.pk]))
+        self.assertIn(response.status_code, [301, 302])
 
         # unauthorized user - wrong group
         self.assertTrue(c.login(username=user0.username, password='secret'))
-        response = c.get(url % group1.pk)
+        response = c.get(reverse("group-all-permissions", args=[group1.pk]))
         self.assertEqual(403, response.status_code)
 
         # unknown group
-        response = c.get(url % 123456)
+        response = c.get(reverse("group-all-permissions", args=[123456]))
         self.assertEqual(404, response.status_code)
 
         # authorized user - group member
         self.assertTrue(c.login(username=user0.username, password='secret'))
-        response = c.get(url % group.pk)
+        response = c.get(reverse("group-all-permissions", args=[group.pk]))
         self.assertEqual(200, response.status_code)
         self.assertTemplateUsed(response, 'object_permissions/permissions/objects.html')
 
         # superuser
         user0.is_superuser = True
         user0.save()
-        response = c.get(url % group1.pk)
+        response = c.get(reverse("group-all-permissions", args=[group1.pk]))
         self.assertEqual(200, response.status_code)
         self.assertTemplateUsed(response, 'object_permissions/permissions/objects.html')
